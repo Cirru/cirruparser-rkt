@@ -1,16 +1,34 @@
 
 #lang racket
 
-(provide append-item
+(provide
+  shorten
+  append-item
   create-nesting
   resolve-dollar
   resolve-comma)
 
+(define (shorten x)
+  (if (list? x)
+    (map shorten x)
+    (hash-ref x 'text)))
+
 (define (append-item xs level item)
-  (if (equal? level 0)
+  ; (displayln "\n\nappend-item: ")
+  ; (display "xs:\t")
+  ; (print (shorten xs))
+  ; (display "\nlevel:\t")
+  ; (displayln level)
+  ; (display "item:\t")
+  ; (displayln item)
+
+  (define res (if (equal? level 0)
     (append xs (list item))
     (append (drop-right xs 1) (list
       (append-item (last xs) (- level 1) item)))))
+  ; (display "\nresult:")
+  ; (print (shorten res))
+  res)
 
 (define (nesting-helper xs n)
   (if (<= n 1) xs
@@ -26,10 +44,10 @@
       (cond
         ((list? cursor)
           (dollar-helper
-            (append before (resolve-dollar cursor))
+            (append before (list (resolve-dollar cursor)))
             (rest after)))
         ((equal? (hash-ref cursor 'text) "$")
-          (append before (resolve-dollar (rest after))))
+          (append before (list (resolve-dollar (rest after)))))
         (else (dollar-helper
           (append before (list cursor)) (rest after)))))))
 
@@ -38,6 +56,11 @@
     (dollar-helper (list) xs)))
 
 (define (comma-helper before after)
+  ; (displayln "")
+  ; (print (shorten before))
+  ; (display "\t\t")
+  ; (print (shorten after))
+
   (if (equal? (length after) 0) before
     (let
       ((cursor (first after)))
@@ -51,12 +74,12 @@
                 (rest after)))
             ((equal? (hash-ref head 'text) ",")
               (comma-helper before
-                (append (resolve-comma (rest cursor))
-                  (rest after))))
-            (else (comma-helper
-              (append before (list (resolve-comma cursor)))
-              (rest after)))))
-        (comma-helper (append before (list after))
+                (append (resolve-comma (rest cursor)) (rest after))))
+            (else
+              (comma-helper
+                (append before (list (resolve-comma cursor)))
+                (rest after)))))
+        (comma-helper (append before (list cursor))
           (rest after))))))
 
 (define (resolve-comma xs)
