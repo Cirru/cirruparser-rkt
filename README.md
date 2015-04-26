@@ -7,7 +7,7 @@ Converted from CoffeeScript.
 ### Usage
 
 ```text
-raco install git@github.com:Cirru/parser-rkt.git
+raco pkg install git://github.com/Cirru/parser-rkt
 ```
 
 ```rkt
