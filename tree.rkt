@@ -6,7 +6,7 @@
   resolve-dollar
   resolve-comma)
 
-(define (cirru-append xs level item)
+(define (append-item xs level item)
   (if (equal? level 0)
     (append xs (list item))
     (append (drop-right xs 1) (list

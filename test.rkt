@@ -3,6 +3,4 @@
 
 (require cirru-parser/parser)
 
-(demo)
-
-(display "hi")
+(display cirru-parser-parse)

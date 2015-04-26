@@ -2,9 +2,9 @@
 
 (require "tree.rkt")
 
-(provide parse pare)
+(provide cirru-parser-parse cirru-parser-pare)
 
-(define (parse code filename)
+(define (cirru-parser-parse code filename)
   (define buffer (make-hash))
 
   (define state (make-hash))
@@ -17,13 +17,13 @@
   (hash-set! state 'nest 0)
   (hash-set! state 'path filename)
 
-  (define res (parsing (list) buffer state code))
-  (define res (map resolve-dollar res))
-  (define res (map resolve-comma res))
+  (define res (parse (list) buffer state code))
+  (set! res (map resolve-dollar res))
+  (set! res (map resolve-comma res))
   res)
 
-(define (pare code filename)
-  (shorten (parse code filename)))
+(define (cirru-parser-pare code filename)
+  (shorten (cirru-parser-parse code filename)))
 
 (define (shorten x)
   (if (list? x)
@@ -53,7 +53,7 @@
   (hash-set! buffer 'text
     (string-append (hash-ref buffer 'text) "\n"))
   (hash-set! state 'name 'string)
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (escape-t xs buffer state code)
   (hash-set! state 'x
@@ -61,7 +61,7 @@
   (hash-set! buffer 'text
     (string-append (hash-ref buffer 'text) "\n"))
   (hash-set! state 'name 'string)
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (escape-else xs buffer state code)
   (hash-set! state 'x
@@ -70,15 +70,15 @@
     (string-append (hash-ref buffer 'text)
       (substring code 0 1)))
   (hash-set! state 'name 'string)
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 ;; string
 
 (define (string-backslash xs buffer state code)
-  (hash-set! state :name 'escape)
+  (hash-set! state 'name 'escape)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (string-newline xs buffer state code)
   (error "newline in a string"))
@@ -87,31 +87,32 @@
   (hash-set! state 'name 'token)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (string-else xs buffer state code)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
   (hash-set! buffer 'text (substring code 0 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 ;; space
 
 (define (space-space xs buffer state code)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (space-newline xs buffer state code)
   (if
     (not (equal? (hash-ref state 'nest) 0))
-    (error "incorrect nesting"))
+    (error "incorrect nesting")
+    null)
   (hash-set! state 'name 'indent)
   (hash-set! state 'x 1)
   (hash-set! state 'y
     (+ (hash-ref state 'y) 1))
   (hash-set! state 'indented 0)
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (space-open xs buffer state code)
   (define nesting (create-nesting 1))
@@ -122,7 +123,7 @@
     (+ (hash-ref state 'level) 1))
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (space-close xs buffer state code)
   (hash-set! state 'nest
@@ -130,10 +131,10 @@
   (hash-set! state 'level
     (- (hash-ref state 'level) 1))
   (if (< (hash-ref state 'nest) 0)
-    (error "close at space"))
+    (error "close at space") null)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (space-quote xs buffer state code)
   (hash-set! state 'name 'string)
@@ -144,7 +145,7 @@
   (hash-set! buffer 'y (hash-ref state 'y))
   (hash-set! state 'x
     (+ (hash-ref state 'path) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (space-else xs buffer state code)
   (hash-set! state'name 'token)
@@ -156,7 +157,7 @@
   (hash-set! buffer 'path (hash-ref state 'path))
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 ;; token
 
@@ -168,7 +169,7 @@
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
   (define buffer (make-hash))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (token-newline xs buffer state code)
   (hash-set! state 'name 'indent)
@@ -180,7 +181,7 @@
   (hash-set! state 'y
     (+ hash-ref state 'y) 1)
   (define buffer (make-hash))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (token-open xs buffer state code)
   (error "open parenthesis in token"))
@@ -191,20 +192,20 @@
   (hash-ref! buffer 'ey (hash-ref state 'y))
   (define xs (append-item xs (hash-ref state 'level buffer)))
   (define buffer (make-hash))
-  (parsing xs buffer state code))
+  (parse xs buffer state code))
 
 (define (token-quote xs buffer state code)
   (hash-set! state 'name 'string)
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (token-else xs buffer state code)
   (hash-set! buffer 'text
     (string-append (hash-ref buffer 'text) (substring code 0 1)))
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 ;; indent
 
@@ -213,14 +214,14 @@
     (+ (hash-ref state 'indented) 1))
   (hash-set! state 'x
     (+ (hash-ref state 'x) 1))
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (indent-newline xs buffer state code)
   (hash-set! state 'x 1)
   (hash-set! state 'y
     (+ (hash-ref state 'y) 1))
   (hash-set! state 'indented 0)
-  (parsing xs buffer state (substring code 1)))
+  (parse xs buffer state (substring code 1)))
 
 (define (indent-close xs buffer state code)
   (error "close parenthesis at indent"))
@@ -229,7 +230,7 @@
   (hash-set! state 'name 'space)
   (if
     (equal? (remainder (hash-ref state 'indented) 2) 1)
-    (error "odd indnetation"))
+    (error "odd indnetation") null)
   (define indented (remainder (hash-ref state 'indented 2)))
   (define diff (- indented (hash-ref state 'indent)))
 
@@ -245,7 +246,7 @@
   (hash-set! state 'level
     (+ (hash-ref state 'level) 1))
   (hash-set! state 'indented indented)
-  (parsing xs buffer state code))
+  (parse xs buffer state code))
 
 (define (parse xs buffer state code)
   (define eof (equal? (string-length code) 0))
@@ -256,9 +257,9 @@
       (if eof escape-eof
         (cond
           ((equal? char "\n") escape-newline)
-          ((equal? char "n")(escape-n)
-          ((equal? char "t")(escape-t)
-          (else escape-else) )))
+          ((equal? char "n") escape-n)
+          ((equal? char "t") escape-t)
+          (else escape-else))))
 
     ((equal? state-name 'string)
       (if eof string-eof
@@ -291,7 +292,7 @@
         (cond
           ((equal? char " ") indent-space)
           ((equal? char "\n") indent-space)
-          ((equal? char "\)") indent-close)
+          ((equal? char ")") indent-close)
           (else indent-else))))
-  ))
+))
   (method xs buffer state code))
