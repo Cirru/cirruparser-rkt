@@ -12,10 +12,10 @@ raco pkg install git://github.com/Cirru/parser-rkt
 
 ```rkt
 #lang racket
-(require cirru-parser)
+(require cirruparser)
 
-(cirru-parser-parse "code" "file")
-(cirru-parser-pare "code" "file")
+(cirruparser-parse "code" "file")
+(cirruparser-pare "code" "file")
 ```
 
 ### Development

@@ -2,9 +2,9 @@
 
 (require "tree.rkt")
 
-(provide cirru-parser-parse cirru-parser-pare)
+(provide cirruparser-parse cirruparser-pare)
 
-(define (cirru-parser-parse code filename)
+(define (cirruparser-parse code filename)
   (define buffer (make-hash))
 
   (define state (make-hash))
@@ -22,8 +22,8 @@
   (set! res (map resolve-comma res))
   res)
 
-(define (cirru-parser-pare code filename)
-  (shorten (cirru-parser-parse code filename)))
+(define (cirruparser-pare code filename)
+  (shorten (cirruparser-parse code filename)))
 
 (define (escape-eof xs buffer state code)
   (error "EOF in escape state"))

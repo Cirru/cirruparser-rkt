@@ -1,5 +1,5 @@
 
 #lang info
 
-(define collection "cirru–parser")
+(define collection "cirruparser")
 (define version "0.1")

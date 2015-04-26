@@ -1,7 +1,7 @@
 
 #lang racket
 
-(require cirru-parser/parser)
+(require cirruparser/parser)
 (require json)
 
 (define names (list
@@ -15,7 +15,7 @@
     (begin
       (define file (format "examples/~a.cirru" name))
       (define json-file (format "ast/~a.json" name))
-      (define tree (cirru-parser-pare (file->string file) ""))
+      (define tree (cirruparser-pare (file->string file) ""))
       (define formated (jsexpr->string tree))
       (define expected (jsexpr->string
         (string->jsexpr (file->string json-file))))
